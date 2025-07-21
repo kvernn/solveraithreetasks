@@ -1,0 +1,7 @@
+{"timestamp": "2025-07-21T13:59:34.143166", "event": "Product Recommended", "data": {"product_name": "ADIDAS TENSAUR RUN JUNIOR SHOES WHITE", "user_query": "hello bro, got kid shoes for running ah?"}}
+{"timestamp": "2025-07-21T14:01:35.015461", "event": "User Follow-up Question", "data": {"question": "is this shoe on discount or is this the original price?", "context_product": "ADIDAS TENSAUR RUN JUNIOR SHOES WHITE"}}
+{"timestamp": "2025-07-21T14:03:25.703085", "event": "Product Recommended", "data": {"product_name": "ASICS GEL-NIMBUS 27 WOMEN'S RUNNING SHOES BLUE", "user_query": "hello, go women running shoe ah? any discount also?"}}
+{"timestamp": "2025-07-21T14:08:11.429348", "event": "Product Recommended", "data": {"product_name": "ASICS GEL-NIMBUS 27 WOMEN'S RUNNING SHOES BLUE", "user_query": "Hello, can recommend a women running shoe ah? also got any discounts?"}}
+{"timestamp": "2025-07-21T14:08:40.230677", "event": "User Follow-up Question", "data": {"question": "sure, share the link!", "context_product": "ASICS GEL-NIMBUS 27 WOMEN'S RUNNING SHOES BLUE"}}
+{"timestamp": "2025-07-21T14:13:52.873889", "event": "Search Failed", "data": {"user_query": "hello, got any recommendation for women running shoe and got discount ah?"}}
+{"timestamp": "2025-07-21T14:20:16.030758", "event": "Product Recommended", "data": {"product_name": "ASICS GEL-NIMBUS 27 WOMEN'S RUNNING SHOES BLUE", "user_query": "hello bro, got any recommendation for a women running shoe? also got discount ah?"}}
