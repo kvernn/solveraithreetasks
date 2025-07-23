@@ -1,0 +1,10 @@
+# requirements.txt
+
+pinecone
+sentence-transformers
+python-dotenv
+openai
+streamlit
+elevenlabs
+streamlit-audiorec
+streamlit-agraph
