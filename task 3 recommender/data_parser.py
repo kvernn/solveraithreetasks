@@ -206,7 +206,6 @@ def create_embedding_text(product):
     for category, feature_list in product.get("features", {}).items():
         feature_texts.extend(feature_list)
 
-    # Create a highly descriptive summary to strengthen the embedding
     summary = f"This is a {product.get('category', '')} shoe named {product.get('name', '')}. It is described as: {product.get('description', '')}. Key features include: "
 
     embedding_string = summary + ". ".join(feature_texts)

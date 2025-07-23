@@ -4,9 +4,9 @@ from pinecone import Pinecone
 from dotenv import load_dotenv
 from sentence_transformers import SentenceTransformer
 
-def run_query(query_text: str, top_k: int = 3):
+def run_query(query_text: str, top_k: int = 3, budget_range: tuple = (None, None)):
     """
-    Takes a user query, embeds it, and retrieves the top_k most relevant products
+    Takes a user query, embeds it, and retrieves the top_k most relevant products with the budget filtering.
     """
     load_dotenv()
 
@@ -30,22 +30,35 @@ def run_query(query_text: str, top_k: int = 3):
     print(f"\nEmbedding your query: '{query_text}'")
     query_embedding = model.encode(query_text).tolist()
 
+    filter_dict = {}
+    if budget_range[0] is not None and budget_range[1] is not None:
+        filter_dict = {
+            "price": {
+                "$gte": budget_range[0],
+                "$lte": budget_range[1]
+            }
+        }
+        print(f"Applying budget filter: RM{budget_range[0]} - RM{budget_range[1]}")
+
     print("Querying Pinecone to find the best matches...")
     query_results = index.query(
         vector=query_embedding,
         top_k=top_k,
-        include_metadata=True
+        include_metadata=True,
+        filter=filter_dict if filter_dict else None
     )
 
     print("\n--- Top Recommendations ---")
     if not query_results['matches']:
         print("No matches found.")
-        return
+        return query_results
 
     for i, result in enumerate(query_results['matches']):
         metadata = result['metadata']
         print(f"\n{i+1}. {metadata.get('name', 'N/A')} (Score: {result['score']:.4f})")
         print(f"   Price: RM {metadata.get('price', 'N/A'):.2f}")
+        if metadata.get('original_price', 0) > metadata.get('price', 0):
+            print(f"   Original Price: RM {metadata.get('original_price'):.2f} - SALE!")
         print(f"   Category: {metadata.get('category', 'N/A')}")
         print(f"   Description: {metadata.get('description', 'N/A')}")
 
@@ -64,11 +77,6 @@ def run_query(query_text: str, top_k: int = 3):
     return query_results
 
 if __name__ == "__main__":
-    # --- Example Queries to Test ---
-    # query1 = "a bouncy shoe that is good for running"
-    # query2 = "cheap shoes for casual walking"
-    # query3 = "what do you have for kids that is easy to put on?"
-    # query4 = "i need a shoe that is comfortable for someone with wide feet" # Not in data, good test
 
     try:
         user_query = "a bouncy shoe that is good for running"

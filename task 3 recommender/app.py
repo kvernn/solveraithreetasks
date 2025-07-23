@@ -5,7 +5,6 @@ st.set_page_config(page_title="Bob's Shoe Recommender", page_icon="👟", layout
 
 st.title("👟 Bob's Shoe Recommender")
 
-# --- Initialize session state for chat history AND the last seen product ---
 if "messages" not in st.session_state:
     st.session_state.messages = []
 if "last_product" not in st.session_state:
@@ -13,7 +12,7 @@ if "last_product" not in st.session_state:
 
 if st.button("Clear Conversation History"):
     st.session_state.messages = []
-    st.session_state.last_product = None # Also clear the last product
+    st.session_state.last_product = None
     st.rerun()
 
 if not st.session_state.messages:
@@ -31,7 +30,6 @@ if prompt := st.chat_input("What kind of shoe are you looking for?"):
     with st.chat_message("assistant"):
         with st.spinner("Bob is thinking... 🤔"):
             try:
-                # --- Pass the "notepad" (last_product) to our function ---
                 final_answer, product_to_remember = generate_contextual_response(
                     st.session_state.messages,
                     st.session_state.last_product
@@ -39,7 +37,6 @@ if prompt := st.chat_input("What kind of shoe are you looking for?"):
                 st.markdown(final_answer)
                 st.session_state.messages.append({"role": "assistant", "content": final_answer})
 
-                # --- If the function found a new product, save it to our "notepad" ---
                 if product_to_remember:
                     st.session_state.last_product = product_to_remember
 
