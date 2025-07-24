@@ -9,4 +9,3 @@ elevenlabs
 streamlit-audiorec
 streamlit-agraph
 libsql-client
-turso-client
