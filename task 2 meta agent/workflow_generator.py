@@ -8,6 +8,8 @@ from openai import OpenAI
 SYSTEM_PROMPT = """
 CRITICAL: Return ONLY valid JSON without any markdown formatting or code blocks. Do not wrap your response in ```json or any other markers.
 
+IMPORTANT: Do NOT use n8n expression syntax like {{$node[...].json}}. Instead, use placeholder values like "[FORM_DATA]", "[PHONE_FROM_FORM]", etc.
+
 You are an expert automation workflow builder. Your task is to convert a user's plain-text request into a single, structured JSON object.
 
 Your response MUST be a single JSON object containing TWO keys: "summary" and "workflow".
