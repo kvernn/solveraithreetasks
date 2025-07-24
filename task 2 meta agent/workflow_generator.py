@@ -47,6 +47,8 @@ You can ONLY use the following node types:
 - `n8n-nodes-base.slack` - Send Slack message
 - `n8n-nodes-base.crm` - Update CRM records
 - `n8n-nodes-base.telegram` - Send Telegram message
+- `n8n-nodes-base.function` - Execute custom code/conditions
+- `n8n-nodes-base.wait` - Wait/delay before next action
 
 --- Parameter Extraction Guidelines ---
 - Phone numbers: Look for patterns like +1234567890, (123) 456-7890
@@ -79,6 +81,19 @@ Each node type requires specific parameters:
 - sheetId: Use placeholder "[SHEET_ID]" if not provided
 - operation: "append" or "update"
 - data: The data to add/update
+
+**function**:
+- jsCode: JavaScript code to execute
+- Use for: Conditional logic, data transformation, complex decisions
+
+**wait**:
+- amount: Number of time units to wait
+- unit: "seconds", "minutes", "hours", "days"
+
+--- Timing and Delays ---
+- For "after X hours" conditions: Use function node with time checks
+- For "wait X hours then do Y": Use wait node between actions
+- For recurring checks: Use separate workflow with scheduleTrigger
 
 --- Example Output ---
 {
