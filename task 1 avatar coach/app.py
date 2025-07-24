@@ -1,15 +1,16 @@
 import streamlit as st
+from crm import CoachingCRM
 from elevenlabs.client import ElevenLabs
 import os
 import requests
+import uuid
 import time
+import asyncio
 from dotenv import load_dotenv
 from st_audiorec import st_audiorec
 import io
 import hashlib
 import base64
-
-# Import our coaching logic
 from coach_logic import get_coaching_response
 
 # --- Page Configuration ---
@@ -24,7 +25,6 @@ if not DID_API_KEY:
     st.error("❌ DID_API_KEY not found in .env file! Get one at https://studio.d-id.com/")
     st.stop()
 
-@st.cache_resource
 def get_elevenlabs_client():
     api_key = os.getenv("ELEVENLABS_API_KEY")
     if not api_key: st.error("ELEVENLABS_API_KEY not found.")
@@ -42,7 +42,6 @@ def create_did_talk_video(text_to_speak: str):
         "Content-Type": "application/json"
     }
 
-    # Using a preset presenter
     payload = {
         "script": {
             "type": "text",
@@ -60,7 +59,6 @@ def create_did_talk_video(text_to_speak: str):
     }
 
     try:
-        # Create talk
         with st.status("Creating D-ID talk video...", expanded=True) as status:
             response = requests.post(
                 f"{DID_API_URL}/talks",
@@ -81,7 +79,6 @@ def create_did_talk_video(text_to_speak: str):
 
         st.success(f"✅ Talk created with ID: {talk_id}")
 
-        # Poll for completion
         return poll_did_video_status(talk_id, headers)
 
     except Exception as e:
@@ -93,7 +90,7 @@ def poll_did_video_status(talk_id: str, headers: dict):
     Poll D-ID API for video completion
     """
 
-    max_attempts = 60  # 5 minutes max
+    max_attempts = 60
     attempt = 0
 
     progress_bar = st.progress(0)
@@ -196,6 +193,11 @@ if "chat_history" not in st.session_state:
     st.session_state.chat_history = [
         {"role": "assistant", "content": "Hello! I am your AI Coach. How can I help you reflect today?", "type": "text"}
     ]
+if 'user_id' not in st.session_state:
+    user_id = asyncio.run(CoachingCRM.create_user(email="test.user@streamlit.app", name="Test User"))
+    st.session_state.user_id = user_id
+if "session_id" not in st.session_state:
+    st.session_state.session_id = str(uuid.uuid4())
 if "processed_audio_hashes" not in st.session_state:
     st.session_state.processed_audio_hashes = set()
 if "generating_video" not in st.session_state:
@@ -204,16 +206,22 @@ if "text_for_video" not in st.session_state:
     st.session_state.text_for_video = None
 
 # --- Core AI Response Function ---
-def process_user_input(user_input):
-    """Gets the AI's text response and triggers the video generation state."""
+async def process_user_input_async(user_input):
+    """
+    Gets AI response, logs it, and triggers video generation
+    """
     st.session_state.chat_history.append({"role": "user", "content": user_input, "type": "text"})
 
     with st.spinner("The AI coach is thinking..."):
-        ai_response_text = get_coaching_response(user_input, st.session_state.chat_history)
+        ai_response_text, knowledge_context = get_coaching_response(user_input, st.session_state.chat_history)
+
+        await CoachingCRM.log_conversation(st.session_state.user_id, st.session_state.session_id, "user", user_input)
+        await CoachingCRM.log_conversation(st.session_state.user_id, st.session_state.session_id, "assistant", ai_response_text)
+
         st.session_state.text_for_video = ai_response_text
         st.session_state.generating_video = True
 
-# --- Handle Video Generation ---
+# --- Video Generation ---
 if st.session_state.generating_video and st.session_state.text_for_video:
     with st.container():
         if use_avatar:
@@ -338,11 +346,11 @@ if wav_audio_data:
                 user_text = transcription_object.text.strip()
                 if user_text:
                     st.info(f"Heard you say: '{user_text}'")
-                    process_user_input(user_text)
+                    asyncio.run(process_user_input_async(user_text))
                     st.rerun()
             except Exception as e:
                 st.error(f"Transcription failed: {e}")
 
 if prompt := st.chat_input("Type your message here..."):
-    process_user_input(prompt)
+    asyncio.run(process_user_input_async(prompt))
     st.rerun()

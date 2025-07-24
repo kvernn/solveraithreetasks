@@ -2,10 +2,7 @@ import os
 import json
 from dotenv import load_dotenv
 from openai import OpenAI
-from sentence_transformers import SentenceTransformer # We need this for the query embedding
-
-# NOTE: We are NOT using the query_engine from Task 3.
-# Task 1's RAG logic is simple enough to be self-contained in this file.
+from sentence_transformers import SentenceTransformer
 
 def get_coaching_response(user_query: str, chat_history: list = []):
     """
@@ -33,7 +30,7 @@ def get_coaching_response(user_query: str, chat_history: list = []):
 
     index = pc.Index(index_name)
 
-    # --- 3. Embed the query and retrieve knowledge ---
+    # --- Embed the query and retrieve knowledge ---
     print(f"[INFO] Embedding user query: '{user_query}'")
     query_embedding = model.encode(user_query).tolist()
 
@@ -44,7 +41,7 @@ def get_coaching_response(user_query: str, chat_history: list = []):
         include_metadata=True
     )
 
-    # --- 4. Format the context for the LLM ---
+    # --- Format the context for the LLM ---
     knowledge_context = ""
     if retrieval_results['matches']:
         print("[INFO] Found relevant knowledge in the database.")
@@ -58,8 +55,7 @@ def get_coaching_response(user_query: str, chat_history: list = []):
         knowledge_context = "No specific information was found in the knowledge base for this query."
 
 
-    # --- 5. Generate the final response ---
-    # Persona for the AI coach.
+    # --- Generate the final response ---
     system_prompt = """
     You are an AI Avatar Coach. Your persona is wise, encouraging, and insightful.
     Your goal is to guide users through a Q&A conversation based on the provided knowledge.
@@ -85,11 +81,11 @@ def get_coaching_response(user_query: str, chat_history: list = []):
     )
 
     final_answer = response.choices[0].message.content
-    return final_answer
+    return final_answer, knowledge_context
 
 
 if __name__ == "__main__":
-    # A test loop to see if our coach brain is working
+    # A test loop to see if the coach is working
     fake_chat_history = [
         {'role': 'user', 'content': 'What is the most important mindset for building wealth?'},
         {'role': 'assistant', 'content': 'The most crucial mindset is the abundance mentality, which is the belief that there are always opportunities available. It\'s about seeing challenges as learning experiences rather than roadblocks. Does that make sense?'}
