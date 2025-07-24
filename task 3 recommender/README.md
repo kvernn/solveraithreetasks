@@ -19,7 +19,15 @@ The goal of this task was to develop a conversational AI recommender that sugges
 - **Semantic Search**: Uses a Pinecone vector database with SentenceTransformer embeddings for contextual product matching that goes beyond simple keywords.
 - **Personalized Tips & Promos**: The AI is programmed with business logic to provide relevant follow-up tips (e.g., shoe care, sizing advice) and announce sales or free delivery thresholds.
 - **Conversation Memory**: Remembers the last product it recommended using Streamlit's `session_state`, allowing it to accurately answer follow-up questions about price, features, or links without hallucinating.
-- **CRM Logging**: Simulates logging key conversational events (product recommendations, user questions, failed searches) to a `crm_log.txt` file for business intelligence.
+- **CRM Logging Turso Database**: Logs conversational events to a cloud-based Turso database, capturing:
+    - User messages and bot responses in separate columns for easy analysis
+    - User mood and emotional context detection
+    - Product recommendations and search failures
+    - Budget preferences and shopping urgency
+    - Complete interaction history for business intelligence
+
+  *Evidence of successful CRM logging:*
+  ![Turso Database Log](task_3_turso.png)
 
 ---
 

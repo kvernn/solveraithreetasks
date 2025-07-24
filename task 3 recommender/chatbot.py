@@ -4,14 +4,11 @@ from dotenv import load_dotenv
 from openai import OpenAI
 from query_engine import run_query
 import datetime
+import asyncio
+from crm import ShoeCRM
 
-def log_to_crm(event: str, data: dict):
-    log_entry = {"timestamp": datetime.datetime.now().isoformat(), "event": event, "data": data}
-    print(f"\n[CRM LOG] Event: {event}, Data: {data}")
-    with open("crm_log.txt", "a") as f:
-        f.write(json.dumps(log_entry) + "\n")
 
-def generate_contextual_response(chat_history: list, last_retrieved_product: dict = None):
+async def generate_contextual_response(chat_history: list, last_retrieved_product: dict = None):
     """
     Enhanced response generator with mood detection, budget awareness, and personalization.
     """
@@ -26,12 +23,15 @@ def generate_contextual_response(chat_history: list, last_retrieved_product: dic
     user_mood = detect_user_mood(last_user_message, client)
     budget_min, budget_max = extract_budget_from_text(last_user_message)
 
-    # Log mood and budget info
-    log_to_crm("User Context Analysis", {
-        "mood": user_mood,
-        "budget_range": f"RM{budget_min}-RM{budget_max}" if budget_min else "Not specified",
-        "message": last_user_message
-    })
+    await ShoeCRM.log_event(
+        "User Context Analysis",
+        {
+            "mood": user_mood,
+            "budget_range": f"RM{budget_min}-RM{budget_max}" if budget_min else "Not specified"
+        },
+        user_message=last_user_message,
+        bot_response=None
+    )
 
     # Routing logic
     routing_prompt = f"Conversation History:\n{chat_history}\n\nDoes the user's LAST message contain a NEW request for a type of shoe? Answer with only 'SEARCH' or 'REPLY'."
@@ -66,26 +66,38 @@ def generate_contextual_response(chat_history: list, last_retrieved_product: dic
             else:
                 product_to_remember = retrieved_products['matches'][0]['metadata']
 
-            log_to_crm("Product Recommended", {
-                "product_name": product_to_remember.get("name"),
-                "user_query": last_user_message,
-                "user_mood": user_mood.get("emotion"),
-                "price": product_to_remember.get("price")
-            })
+            await ShoeCRM.log_event(
+                "Product Recommended",
+                {
+                    "product_name": product_to_remember.get("name"),
+                    "user_mood": user_mood.get("emotion"),
+                    "price": product_to_remember.get("price")
+                },
+                user_message=last_user_message,
+                bot_response=None
+            )
         else:
-            log_to_crm("Search Failed", {
-                "user_query": last_user_message,
-                "budget_range": f"RM{budget_min}-RM{budget_max}" if budget_min else "None"
-            })
+            await ShoeCRM.log_event(
+                "Search Failed",
+                {
+                    "budget_range": f"RM{budget_min}-RM{budget_max}" if budget_min else "None"
+                },
+                user_message=last_user_message,
+                bot_response=None
+            )
 
     elif "REPLY" in intent and last_retrieved_product:
         print("[INFO] User is replying. Using last retrieved product as context.")
         product_to_remember = last_retrieved_product
-        log_to_crm("User Follow-up Question", {
-            "question": last_user_message,
-            "context_product": last_retrieved_product.get("name"),
-            "user_mood": user_mood.get("emotion")
-        })
+        await ShoeCRM.log_event(
+            "User Follow-up Question",
+            {
+                "context_product": last_retrieved_product.get("name"),
+                "user_mood": user_mood.get("emotion")
+            },
+            user_message=last_user_message,
+            bot_response=None
+        )
 
     product_context = format_product_context_for_llm(product_to_remember, user_mood)
 
@@ -141,11 +153,28 @@ def generate_contextual_response(chat_history: list, last_retrieved_product: dic
     # Check for conversation end
     farewells = ["thank you", "thanks", "ok tq", "terima kasih", "ok thanks", "bye", "goodbye"]
     if any(farewell in last_user_message.lower() for farewell in farewells):
-        log_to_crm("Conversation Ended", {
-            "last_message": last_user_message,
-            "total_messages": len(chat_history),
-            "final_mood": user_mood.get("emotion")
-        })
+        await ShoeCRM.log_event(
+            "Conversation Ended",
+            {
+                "total_messages": len(chat_history),
+                "final_mood": user_mood.get("emotion")
+            },
+            user_message=last_user_message,
+            bot_response=final_answer
+        )
+
+    await ShoeCRM.log_event(
+        "Chat Interaction Complete",
+        {
+            "mood": user_mood.get("emotion"),
+            "had_product_search": "SEARCH" in intent,
+            "had_product_recommendation": product_to_remember is not None,
+            "product_recommended": product_to_remember.get("name") if product_to_remember else None,
+            "budget_mentioned": budget_min is not None
+        },
+        user_message=last_user_message,
+        bot_response=final_answer
+    )
 
     return final_answer, product_to_remember
 
